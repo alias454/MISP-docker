@@ -1,0 +1,74 @@
+version: '3.4'
+
+services:
+  misp-mariadb:
+    image: mariadb:10.8
+    container_name: misp-mariadb
+    hostname: ${MYSQL_HOST}
+    restart: always
+    tmpfs:
+      - /tmp
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_LOGIN}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+  misp-redis:
+    image: redis:7.0
+    container_name: misp-redis
+    restart: always
+
+  misp-modules:
+    build: ./modules
+    container_name: misp-modules
+    restart: always
+    cap_drop:
+      - NET_RAW
+      - SYS_CHROOT
+      - MKNOD
+      - NET_BIND_SERVICE
+      - AUDIT_WRITE
+      - SETFCAP
+
+  misp-web:
+    build: ./web
+    container_name: misp-web
+    restart: always
+    depends_on:
+      - misp-mariadb
+      - misp-redis
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - NET_RAW
+      - SYS_CHROOT
+      - MKNOD
+      - AUDIT_WRITE
+      - SETFCAP
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_LOGIN: ${MYSQL_LOGIN}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MISP_ORG: ${MISP_ORG}
+      MISP_BASEURL: ${MISP_BASEURL}
+      MISP_MODULE_URL: ${MISP_MODULE_URL}
+      MISP_ADMIN_EMAIL: ${MISP_ADMIN_EMAIL}
+      MISP_UUID: ${MISP_UUID}
+      SECURITY_SALT: ${SECURITY_SALT}
+      ZEROMQ_ENABLED: "${ZEROMQ_ENABLED}"
+      REDIS_HOST: ${REDIS_HOST}
+      SELF_SIGNED_ENABLED: "${SELF_SIGNED_ENABLED}"
+      CERT_COUNTRY: ${CERT_COUNTRY}
+      CERT_STATE: ${CERT_STATE}
+      CERT_LOCALE: ${CERT_LOCALE}
+      CERT_ORG: ${CERT_ORG}
+      CERT_OU: ${CERT_OU}
+      CERT_CN: ${CERT_CN}
+      CERT_SAN: "${CERT_SAN}"
+    ports:
+      - 127.0.0.1:80:80
+      - 127.0.0.1:443:443
+      - 127.0.0.1:50000:50000
+
